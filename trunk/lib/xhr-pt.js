@@ -21,7 +21,6 @@ function XHR(uri) {
 
 		method: "GET",
 		uri: uri,
-		sync: false,
 		user: null,
 		password: null,
 		postData: null,
@@ -73,6 +72,11 @@ function XHR(uri) {
 			return this;
 		},
 
+		ontimeout: function(ontimeout) {
+			this._ontimeout = ontimeout;
+			return this;
+		},
+
 		onprogress: function(onprogress) {
 			this._onprogress = onprogress;
 			return this;
@@ -89,9 +93,19 @@ function XHR(uri) {
 			return this;
 		},
 
+		oncancel: function(oncancel) {
+			this._oncancel = oncancel;
+			return this;
+		},
+
 		debug: function(on) {
 			this._debug = on;
 			return this;
+		},
+
+		cancel: function() {
+			this.cancelled = true;
+			if (this._inflight) this._xhr.abort();
 		},
 
 		start: function() {
@@ -101,8 +115,8 @@ function XHR(uri) {
 					_xhr = this._xhr,
 					timeout = function() {
 						console.log("XHR REQUEST TIMED OUT");
-						_xhr.abort();
-						if (XHR._ontimeout) XHR._ontimeout();
+						if (XHR._ontimeout) XHR._ontimeout(_xhr, XHR);
+						XHR.cancel();
 					},
 					onreadystatechange = function() {
 						var sofar = (new Date()).valueOf() - XHR._start;
@@ -117,19 +131,28 @@ function XHR(uri) {
 							if (XHR._onprogress) XHR._onprogress(_xhr, XHR);
 						} else {
 							delete XHR._inflight;
-							if (XHR._debug) {
-								console.log("XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
-							}
-							if (XHR._onprogress) XHR._onprogress(_xhr, XHR);
-							if (_xhr.status == 200 && XHR._onload) {
-								XHR._onload(_xhr, XHR);
+							if (XHR.cancelled) {
+								if (XHR._debug) {
+									console.log("XHR CANCELLED AFTER " + sofar);
+								}
+								if (XHR._oncancelled) {
+									XHR._oncancelled(_xhr, XHR);
+								}
+							} else {
+								if (XHR._debug) {
+									console.log("XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
+								}
+								if (XHR._onprogress) XHR._onprogress(_xhr, XHR);
+								if (_xhr.status == 200 && XHR._onload) {
+									XHR._onload(_xhr, XHR);
+								}
 							}
 						}
 					};
 				this._start = (new Date()).valueOf();
 				this._timeout = setTimeout(timeout, this.timeouts[0]);
 				_xhr.onreadystatechange = onreadystatechange;
-				_xhr.open(this.method, this.uri, this.sync, this.user, this.password);
+				_xhr.open(this.method, this.uri, true, this.user, this.password);
 				try {
 					_xhr.send(this.postData);
 				} catch(e) {
