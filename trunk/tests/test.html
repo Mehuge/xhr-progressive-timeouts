@@ -18,18 +18,23 @@ Copyright 2013 Austin France
 <hr/>
 <div id="r2"></div>
 <script>
-/*
-XHR("http://hive.borg-collective.org.uk/downloads/slowdown.php").debug(true).onload(function(xhr) {
-		console.dir(xhr);
-	});
-*/
-XHR("http://hive.borg-collective.org.uk/downloads/slowdown.php")
+function DEBUG(s) {
+	r1.innerText = s;
+}
+XHR("slowdown.php?s=102400&d=1")
 	.timeout(10000)
-	.ontimeout(function(xhr) { console.dir(xhr); console.error('timed out'); })
+	.ontimeout(function(xhr) { 
+		console.error('timed out');
+		console.dir(xhr); 
+	})
     .debug(true)
-    .onprogress(function(xhr) { console.log("...progress"); })
+    .onprogress(function(xhr) { 
+		if (xhr.readyState > 2) {
+			DEBUG("downloading " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
+		}
+	})
 	.onerror(function() { console.error('error') })
 	.onload(function(xhr) {
-			console.dir(xhr);
-		});
+		DEBUG("DONE");
+	 });
 </script>
