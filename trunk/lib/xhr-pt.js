@@ -121,6 +121,7 @@ function XHR(uri) {
 					onreadystatechange = function() {
 						var sofar = (new Date()).valueOf() - XHR._start;
 						clearTimeout(XHR._timeout);
+						delete XHR._timeout;
 						if (_xhr.readyState < 4) {
 							if (XHR._debug) {
 								console.log("XHR READY STATE " + _xhr.readyState 
