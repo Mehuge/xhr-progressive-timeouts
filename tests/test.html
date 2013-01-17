@@ -1,0 +1,18 @@
+<script src="../lib/xhr-pt.js"></script>
+<div id="r1"></div>
+<hr/>
+<div id="r2"></div>
+<script>
+XHR("http://hive.borg-collective.org.uk/RMC2/server/?r=get").onload(function(xhr) {
+		r1.innerText = xhr.responseText;
+	});
+
+XHR("http://hive.borg-collective.org.uk/RMC2/server/?r=get")
+	.timeout(10000, function() { alert('timed out'); })
+    .debug(true)
+    .onprogress(function(xhr) { console.log("progress"); })
+	.onerror(function() { alert('error') })
+	.onload(function(xhr) {
+			r2.innerText = xhr.responseText;
+		});
+</script>
