@@ -16,9 +16,12 @@
 function XHR(uri) {
 	return {
 		EVENT_TYPE: { PROGRESS: 0, TIMEOUT: 1, CANCEL: 2, ERROR: 3, READY: 4 },
+
 		_xhr: new XMLHttpRequest(),
 
 		timeouts: [ 20000, 20000, 20000, 20000, 20000 ],
+
+		_listeners: {},
 
 		method: "GET",
 		uri: uri,
@@ -73,30 +76,44 @@ function XHR(uri) {
 			return this;
 		},
 
-		ontimeout: function(ontimeout) {
-			this._ontimeout = ontimeout;
+		ontimeout: function(handler) {
+			this.addEventListener("timeout", handler);
 			return this;
 		},
 
-		onprogress: function(onprogress) {
-			this._onprogress = onprogress;
+		onprogress: function(handler) {
+			this.addEventListener("progress", handler);
 			return this;
 		},
 
-		onload: function(onload) {
-			this._onload = onload;
+		onload: function(handler) {
+			this.addEventListener("load", handler);
 			this.start();
 			return this;
 		},
 
-		onerror: function(onerror) {
-			this._onerror = onerror;
+		onerror: function(handler) {
+			this.addEventListener("error", handler);
 			return this;
 		},
 
-		oncancel: function(oncancel) {
-			this._oncancel = oncancel;
+		oncancel: function(handler) {
+			this.addEventListener("cancel", handler);
 			return this;
+		},
+
+		addEventListener: function(name, handler) {
+			var listeners = this._listeners[name] || [];
+			listeners.push(handler);
+			this._listeners[name] = listeners;
+			return this;
+		},
+
+		_fireEvent: function(name, args) {
+			var listeners = this._listeners[name] || [];
+			for (var i = 0; i < listeners.length; i++) {
+				listeners[i].apply(this,[ args ]);
+			}
 		},
 
 		debug: function(on) {
@@ -124,8 +141,8 @@ function XHR(uri) {
 				var XHR = this,
 					_xhr = this._xhr,
 					timeout = function() {
-						console.log("XHR REQUEST TIMED OUT");
-						if (XHR._ontimeout) XHR._ontimeout(XHR._getResponse(XHR.EVENT_TYPE.TIMEOUT));
+						console.debug("XHR REQUEST TIMED OUT");
+						XHR._fireEvent("timeout", XHR._getResponse(XHR.EVENT_TYPE.TIMEOUT));
 						XHR.cancel();
 					},
 					onreadystatechange = function() {
@@ -134,28 +151,26 @@ function XHR(uri) {
 						delete XHR._timeout;
 						if (_xhr.readyState < 4) {
 							if (XHR._debug) {
-								console.log("XHR READY STATE " + _xhr.readyState 
+								console.debug("XHR READY STATE " + _xhr.readyState 
 									+ " TAKEN " + sofar 
 									+ " TIMEOUT " + (sofar + XHR.timeouts[_xhr.readyState])); 
 							}
 							XHR._timeout = setTimeout(timeout,XHR.timeouts[_xhr.readyState]);
-							if (XHR._onprogress) XHR._onprogress(XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
+							XHR._fireEvent("progress", XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
 						} else {
 							delete XHR._inflight;
 							if (XHR.cancelled) {
 								if (XHR._debug) {
-									console.log("XHR CANCELLED AFTER " + sofar);
+									console.debug("XHR CANCELLED AFTER " + sofar);
 								}
-								if (XHR._oncancelled) {
-									XHR._oncancelled(XHR._getResponse(XHR.EVENT_TYPE.CANCEL));
-								}
+								XHR._fireEvent("cancel", XHR._getResponse(XHR.EVENT_TYPE.CANCEL));
 							} else {
 								if (XHR._debug) {
-									console.log("XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
+									console.debug("XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
 								}
-								if (XHR._onprogress) XHR._onprogress(XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
-								if (_xhr.status == 200 && XHR._onload) {
-									XHR._onload(XHR._getResponse(XHR.EVENT_TYPE.READY, { status: _xhr.status }));
+								XHR._fireEvent("progress", XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
+								if (_xhr.status == 200) {
+									XHR._fireEvent("load", XHR._getResponse(XHR.EVENT_TYPE.READY, { status: _xhr.status }));
 								}
 							}
 						}
@@ -164,10 +179,13 @@ function XHR(uri) {
 				this._timeout = setTimeout(timeout, this.timeouts[0]);
 				_xhr.onreadystatechange = onreadystatechange;
 				_xhr.open(this.method, this.uri, true, this.user, this.password);
+				if (this._debug) {
+					console.debug("XHR " + this.method + " " + this.uri);
+				}
 				try {
 					_xhr.send(this.postData);
 				} catch(e) {
-					if (XHR._onerror) XHR._onerror(XHR._getResponse(XHR.EVENT_TYPE.ERROR, { error: e }));
+					XHR._fireEvent("error", XHR._getResponse(XHR.EVENT_TYPE.ERROR, { error: e }));
 				}
 			}
 			return this;

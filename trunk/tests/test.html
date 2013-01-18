@@ -23,7 +23,7 @@ function DEBUG(s) {
 }
 XHR("slowdown.php?s=102400&d=1")
 	.timeout(10000)
-	.ontimeout(function(response) { 
+	.addEventListener("timeout", function(response) { 
 		console.error('timed out');
 		console.dir(response); 
 	})
