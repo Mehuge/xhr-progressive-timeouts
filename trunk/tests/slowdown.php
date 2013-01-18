@@ -6,6 +6,7 @@
 	$s = $_GET["s"]; $d = $_GET["d"];
 	$i = 0;
 	while ($i < $s) {
+		if (rand(1,100)<2) sleep(rand(1,20));
 		echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF";
 		echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF";
 		echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF";
