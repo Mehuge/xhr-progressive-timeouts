@@ -23,18 +23,20 @@ function DEBUG(s) {
 }
 XHR("slowdown.php?s=102400&d=1")
 	.timeout(10000)
-	.ontimeout(function(xhr) { 
+	.ontimeout(function(response) { 
 		console.error('timed out');
-		console.dir(xhr); 
+		console.dir(response); 
 	})
     .debug(true)
-    .onprogress(function(xhr) { 
+    .onprogress(function(response) { 
+		var xhr = response.getXhr();
 		if (xhr.readyState > 2) {
 			DEBUG("downloading " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
 		}
 	})
-	.onerror(function() { console.error('error') })
-	.onload(function(xhr) {
+	.onerror(function(response) { console.dir(response); console.error('error') })
+	.onload(function(response) {
+		console.dir(response);
 		DEBUG("DONE");
 	 });
 </script>

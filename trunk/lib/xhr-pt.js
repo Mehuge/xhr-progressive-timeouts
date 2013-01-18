@@ -15,6 +15,7 @@
  */
 function XHR(uri) {
 	return {
+		EVENT_TYPE: { PROGRESS: 0, TIMEOUT: 1, CANCEL: 2, ERROR: 3, READY: 4 },
 		_xhr: new XMLHttpRequest(),
 
 		timeouts: [ 20000, 20000, 20000, 20000, 20000 ],
@@ -108,6 +109,15 @@ function XHR(uri) {
 			if (this._inflight) this._xhr.abort();
 		},
 
+		_getResponse: function(eventType, response) {
+			response = response || {};
+			response.eventType = eventType;
+			response.XHR = this;
+			response.EVENT_TYPE = this.EVENT_TYPE;
+			response.getXhr = function() { return this.XHR._xhr; };
+			return response;
+		},
+
 		start: function() {
 			if (!this._inflight) {
 				this._inflight = true;
@@ -115,7 +125,7 @@ function XHR(uri) {
 					_xhr = this._xhr,
 					timeout = function() {
 						console.log("XHR REQUEST TIMED OUT");
-						if (XHR._ontimeout) XHR._ontimeout(_xhr, XHR);
+						if (XHR._ontimeout) XHR._ontimeout(XHR._getResponse(XHR.EVENT_TYPE.TIMEOUT));
 						XHR.cancel();
 					},
 					onreadystatechange = function() {
@@ -129,7 +139,7 @@ function XHR(uri) {
 									+ " TIMEOUT " + (sofar + XHR.timeouts[_xhr.readyState])); 
 							}
 							XHR._timeout = setTimeout(timeout,XHR.timeouts[_xhr.readyState]);
-							if (XHR._onprogress) XHR._onprogress(_xhr, XHR);
+							if (XHR._onprogress) XHR._onprogress(XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
 						} else {
 							delete XHR._inflight;
 							if (XHR.cancelled) {
@@ -137,15 +147,15 @@ function XHR(uri) {
 									console.log("XHR CANCELLED AFTER " + sofar);
 								}
 								if (XHR._oncancelled) {
-									XHR._oncancelled(_xhr, XHR);
+									XHR._oncancelled(XHR._getResponse(XHR.EVENT_TYPE.CANCEL));
 								}
 							} else {
 								if (XHR._debug) {
 									console.log("XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
 								}
-								if (XHR._onprogress) XHR._onprogress(_xhr, XHR);
+								if (XHR._onprogress) XHR._onprogress(XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
 								if (_xhr.status == 200 && XHR._onload) {
-									XHR._onload(_xhr, XHR);
+									XHR._onload(XHR._getResponse(XHR.EVENT_TYPE.READY, { status: _xhr.status }));
 								}
 							}
 						}
@@ -157,7 +167,7 @@ function XHR(uri) {
 				try {
 					_xhr.send(this.postData);
 				} catch(e) {
-					if (XHR._onerror) XHR._onerror(e);
+					if (XHR._onerror) XHR._onerror(XHR._getResponse(XHR.EVENT_TYPE.ERROR, { error: e }));
 				}
 			}
 			return this;
