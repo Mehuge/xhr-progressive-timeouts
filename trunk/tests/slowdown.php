@@ -23,7 +23,7 @@
 		echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF";
 		echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF"; echo "0123456789ABCDEF";
 		$i += 1024;
-		if ($d) sleep($d);
+		if ($d) usleep($d * 1000000);
 		flush();
 	}
 ?>

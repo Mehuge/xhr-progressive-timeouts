@@ -15,7 +15,7 @@
  */
 function XHR(uri) {
 	return {
-		EVENT_TYPE: { PROGRESS: 0, TIMEOUT: 1, CANCEL: 2, ERROR: 3, READY: 4 },
+		EVENT_TYPE: { LOADING: 0, TIMEOUT: 1, CANCEL: 2, ERROR: 3, LOAD: 4 },
 
 		_xhr: new XMLHttpRequest(),
 
@@ -81,8 +81,8 @@ function XHR(uri) {
 			return this;
 		},
 
-		onprogress: function(handler) {
-			this.addEventListener("progress", handler);
+		onloading: function(handler) {
+			this.addEventListener("loading", handler);
 			return this;
 		},
 
@@ -156,7 +156,7 @@ function XHR(uri) {
 									+ " TIMEOUT " + (sofar + XHR.timeouts[_xhr.readyState])); 
 							}
 							XHR._timeout = setTimeout(timeout,XHR.timeouts[_xhr.readyState]);
-							XHR._fireEvent("progress", XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
+							XHR._fireEvent("loading", XHR._getResponse(XHR.EVENT_TYPE.LOADING));
 						} else {
 							delete XHR._inflight;
 							if (XHR.cancelled) {
@@ -168,9 +168,9 @@ function XHR(uri) {
 								if (XHR._debug) {
 									console.debug("XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
 								}
-								XHR._fireEvent("progress", XHR._getResponse(XHR.EVENT_TYPE.PROGRESS));
+								XHR._fireEvent("loading", XHR._getResponse(XHR.EVENT_TYPE.LOADING));
 								if (_xhr.status == 200) {
-									XHR._fireEvent("load", XHR._getResponse(XHR.EVENT_TYPE.READY, { status: _xhr.status }));
+									XHR._fireEvent("load", XHR._getResponse(XHR.EVENT_TYPE.LOAD, { status: _xhr.status }));
 								}
 							}
 						}

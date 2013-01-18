@@ -21,22 +21,34 @@ Copyright 2013 Austin France
 function DEBUG(s) {
 	r1.innerText = s;
 }
-XHR("slowdown.php?s=102400&d=1")
-	.timeout(10000)
-	.addEventListener("timeout", function(response) { 
-		console.error('timed out');
-		console.dir(response); 
-	})
-    .debug(true)
-    .onprogress(function(response) { 
+function response(response) {
+	switch(response.eventType) {
+	case this.EVENT_TYPE.LOADING:
 		var xhr = response.getXhr();
 		if (xhr.readyState > 2) {
 			DEBUG("downloading " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
 		}
-	})
-	.onerror(function(response) { console.dir(response); console.error('error') })
-	.onload(function(response) {
+		break;
+	case this.EVENT_TYPE.TIMEOUT:
+		console.error('timed out');
+		console.dir(response); 
+		break;
+	case this.EVENT_TYPE.ERROR:
+		console.error('timed out');
+		console.dir(response); 
+		break;
+	case this.EVENT_TYPE.LOAD:
 		console.dir(response);
 		DEBUG("DONE");
-	 });
+		break;
+	}
+}
+XHR("slowdown.php?s=102400&d=0.1")
+    .debug(true)
+	.timeout(10000)
+	.addEventListener("timeout", response)
+	.addEventListener("loading", response)
+	.addEventListener("error",   response)
+	.addEventListener("load",   response)
+	.start();
 </script>
