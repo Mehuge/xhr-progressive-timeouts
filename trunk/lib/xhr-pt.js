@@ -146,13 +146,15 @@ function XHR(uri) {
 		_timedout = function() {
 			console.debug(_id + ": XHR REQUEST TIMED OUT");
 			_fireEvent(this, "timeout", _getResponse(this, this.EVENT_TYPE.TIMEOUT));
-			XHR.cancel();
+			this.cancel();
 		},
 
 		_readystatechange = function() {
 			var sofar = (new Date()).valueOf() - _start, XHR = this;
-			clearTimeout(_timeout);
-			_timeout = null;
+			if (_timeout) {
+				clearTimeout(_timeout);
+				_timeout = null;
+			}
 			if (_xhr.readyState < 4) {
 				if (_debug) {
 					console.debug(_id + ": XHR READY STATE " + _xhr.readyState 
