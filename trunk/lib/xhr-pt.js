@@ -21,7 +21,10 @@ function XHR(uri) {
 		_inflight = false,
 		_debug = false,
 		_start = 0,
-		_timeout = 0,
+		_timeout = 0,			// timeout timer id
+
+		// Public method implementations
+
 		timeout = function(timeouts, ontimeout) {
 			if (typeof(timeouts) == "function") {
 				ontimeout = timeouts;
@@ -29,7 +32,7 @@ function XHR(uri) {
 				if (typeof(timeouts) != "array") timeouts = [ timeouts ];
 				if (timeouts.length > 0) {
 					while (timeouts.length < 5) timeouts.push(timeouts[0]);
-					this.timeouts = timeouts;
+					_timeouts = timeouts;
 				}
 			}
 			if (ontimeout) this.addEventHandler("timeout", ontimeout);
@@ -110,49 +113,13 @@ function XHR(uri) {
 			this.cancelled = true;
 			if (_inflight) _xhr.abort();
 		},
-
 		start = function() {
 			if (!_inflight) {
 				_inflight = true;
-				var XHR = this,
-					timeout = function() {
-						console.debug(_id + ": XHR REQUEST TIMED OUT");
-						_fireEvent.apply(XHR, [ "timeout", _getResponse(XHR.EVENT_TYPE.TIMEOUT) ]);
-						XHR.cancel();
-					},
-					onreadystatechange = function() {
-						var sofar = (new Date()).valueOf() - _start;
-						clearTimeout(_timeout);
-						_timeout = null;
-						if (_xhr.readyState < 4) {
-							if (_debug) {
-								console.debug(_id + ": XHR READY STATE " + _xhr.readyState 
-									+ " TAKEN " + sofar 
-									+ " TIMEOUT " + (sofar + XHR.timeouts[_xhr.readyState])); 
-							}
-							_timeout = setTimeout(timeout,XHR.timeouts[_xhr.readyState]);
-							_fireEvent.apply(XHR, [ "loading", _getResponse.apply(XHR, [ XHR.EVENT_TYPE.LOADING ]) ]);
-						} else {
-							delete XHR._inflight;
-							if (XHR.cancelled) {
-								if (_debug) {
-									console.debug(_id + ": XHR CANCELLED AFTER " + sofar);
-								}
-								_fireEvent.apply(XHR, [ "cancel", _getResponse.apply(XHR, [ XHR.EVENT_TYPE.CANCEL ]) ]);
-							} else {
-								if (_debug) {
-									console.debug(_id + ": XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
-								}
-								_fireEvent.apply(XHR, [ "loading", _getResponse.apply(XHR, [ XHR.EVENT_TYPE.LOADING ]) ]);
-								if (_xhr.status == 200) {
-									_fireEvent.apply(XHR, [ "load", _getResponse.apply(XHR, [ XHR.EVENT_TYPE.LOAD, { status: _xhr.status } ]) ]);
-								}
-							}
-						}
-					};
+				var XHR = this;
 				_start = (new Date()).valueOf();
-				_timeout = setTimeout(timeout, this.timeouts[0]);
-				_xhr.onreadystatechange = onreadystatechange;
+				_timeout = setTimeout(function() { _timedout.apply(XHR) }, _timeouts[0]);
+				_xhr.onreadystatechange = function() { _readystatechange.apply(XHR); };
 				_xhr.open(this.method, this.uri, true, this.user, this.password);
 				if (_debug) {
 					console.debug(_id + ": XHR " + this.method + " " + this.uri);
@@ -160,7 +127,7 @@ function XHR(uri) {
 				try {
 					_xhr.send(this.postData);
 				} catch(e) {
-					_fireEvent.appy(XHR, [ "error", _getResponse.apply(XHR [ XHR.EVENT_TYPE.ERROR, { error: e } ]) ]);
+					_fireEvent(XHR, "error", _getResponse(this, XHR.EVENT_TYPE.ERROR, { error: e }));
 				}
 			}
 			return this;
@@ -175,25 +142,63 @@ function XHR(uri) {
 			return this;
 		},
 
-		_fireEvent = function(name, args) {
-			var listeners = _listeners[name] || [];
-			for (var i = 0; i < listeners.length; i++) {
-				listeners[i].apply(this,[ args ]);
+
+		_timedout = function() {
+			console.debug(_id + ": XHR REQUEST TIMED OUT");
+			_fireEvent(this, "timeout", _getResponse(this, this.EVENT_TYPE.TIMEOUT));
+			XHR.cancel();
+		},
+
+		_readystatechange = function() {
+			var sofar = (new Date()).valueOf() - _start, XHR = this;
+			clearTimeout(_timeout);
+			_timeout = null;
+			if (_xhr.readyState < 4) {
+				if (_debug) {
+					console.debug(_id + ": XHR READY STATE " + _xhr.readyState 
+						+ " TAKEN " + sofar 
+						+ " TIMEOUT " + (sofar + _timeouts[_xhr.readyState])); 
+				}
+				_timeout = setTimeout(function() { _timedout.apply(XHR) }, _timeouts[_xhr.readyState]);
+				_fireEvent(this, "loading", _getResponse(this, this.EVENT_TYPE.LOADING));
+			} else {
+				_inflight = null;
+				if (XHR.cancelled) {
+					if (_debug) {
+						console.debug(_id + ": XHR CANCELLED AFTER " + sofar);
+					}
+					_fireEvent(this, "cancel", _getResponse(this, this.EVENT_TYPE.CANCEL));
+				} else {
+					if (_debug) {
+						console.debug(_id + ": XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
+					}
+					_fireEvent(this, "loading", _getResponse(this, this.EVENT_TYPE.LOADING));
+					if (_xhr.status == 200) {
+						_fireEvent(this, "load", _getResponse(this, this.EVENT_TYPE.LOAD, { status: _xhr.status }));
+					}
+				}
 			}
 		},
 
-		_getResponse = function(eventType, response) {
+		_fireEvent = function(XHR, name, args) {
+			var listeners = _listeners[name] || [];
+			for (var i = 0; i < listeners.length; i++) {
+				listeners[i].apply(XHR,[ args ]);
+			}
+		},
+
+		_getResponse = function(XHR, eventType, response) {
 			response = response || {};
 			response.eventType = eventType;
-			response.XHR = this;
-			response.EVENT_TYPE = this.EVENT_TYPE;
+			response.XHR = XHR;
+			response.EVENT_TYPE = XHR.EVENT_TYPE;
 			response.getXhr = function() { return _xhr; };
 			return response;
 		}, 
 
 		_xhr = new XMLHttpRequest(),
 
-		timeouts = [ 20000, 20000, 20000, 20000, 20000 ],
+		_timeouts = [ 20000, 20000, 20000, 20000, 20000 ],
 
 		_listeners = {},
 
