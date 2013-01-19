@@ -34,7 +34,9 @@ function response(response) {
 		console.dir(response); 
 		break;
 	case this.EVENT_TYPE.ERROR:
-		console.error('timed out');
+		var e = response.error, m = e.message + " (" + e.name + ") [" + e.code + "] " + e.stack;
+		console.error(m);
+		DEBUG(m);
 		console.dir(response); 
 		break;
 	case this.EVENT_TYPE.LOAD:
