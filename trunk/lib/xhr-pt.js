@@ -19,8 +19,8 @@
 	if (!window.XHR) {
         window.XHR = function(uri) {
     		// Private data and methods
-    		var _id = (new Date()).valueOf(),
-    			_inflight = false,
+    		var _id = window.XHR._id++,
+				_inflight = false,
     			_debug = false,
     			_start = 0,
     			_timeout = 0,			// timeout timer id
@@ -242,5 +242,6 @@
     
     		return exports;
     	}
+		window.XHR._id = 0;
     }
 })(window);
