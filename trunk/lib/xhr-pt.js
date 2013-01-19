@@ -127,6 +127,8 @@ function XHR(uri) {
 				try {
 					_xhr.send(this.postData);
 				} catch(e) {
+					clearTimeout(_timeout);
+					_timeout = null;
 					_fireEvent(XHR, "error", _getResponse(this, XHR.EVENT_TYPE.ERROR, { error: e }));
 				}
 			}
