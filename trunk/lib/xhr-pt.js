@@ -24,9 +24,8 @@
     			_debug = false,
     			_start = 0,
     			_timeout = 0,			// timeout timer id
-				_headers = [],
-				_hasQuery = uri.indexOf("?") != -1,
-				_query = [],
+				_headers = {},
+				_query = {},
     
     			// Public method implementations
     
@@ -45,13 +44,21 @@
     				return this;
     			},
 
+				_mixin = function(hash,o,v) {
+					if (typeof o == "string") {
+						hash[o] = v;
+					} else {
+						for (k in o) { hash[k] = o[k]; }
+					}
+				},
+
 				query = function(name, value) {
-					_query.push({ name: name, value: value });
+					_mixin(_query, name, value);
 					return this;
 				},
 
 				header = function(name, value) {
-					_headers.push({ name: name, value: value });
+					_mixin(_headers, name, value);
 					return this;
 				},
     
@@ -124,6 +131,7 @@
     				this.cancelled = true;
     				if (_inflight) _xhr.abort();
     			},
+
     			start = function() {
     				if (!_inflight) {
     					_inflight = true;
@@ -131,14 +139,15 @@
     					_start = (new Date()).valueOf();
     					_timeout = setTimeout(function() { _timedout.apply(XHR) }, _timeouts[0]);
     					_xhr.onreadystatechange = function() { _readystatechange.apply(XHR); };
-						var uri = this.uri;
-						for (var i = 0; i < _query.length; i++) {
-							uri += (i > 0 || _hasQuery ? "&" : "?") + _query[i].name + "=" + encodeURI(_query[i].value);
+						var uri = this.uri, sep = uri.indexOf("?") == -1 ? "?" : "&";
+						for (name in _query) {
+							uri += sep + name + "=" + encodeURI(_query[name]);
+							sep = "&";
 						}
     					_xhr.open(this.method, uri, true, this.user, this.password);
-						for (i = 0; i < _headers.length; i++) {
-    						console.debug(_id + ": SET HEADER " + _headers[i].name + ": " + _headers[i].value);
-							_xhr.setRequestHeader(_headers[i].name, _headers[i].value);
+						for (name in _headers) {
+    						console.debug(_id + ": SET HEADER " + name + ": " + _headers[name]);
+							_xhr.setRequestHeader(name, _headers[name]);
 						}
     					if (_debug) {
     						console.debug(_id + ": XHR " + this.method + " " + uri);
@@ -162,7 +171,7 @@
     			},
     
     			addId = function() {
-					_query.push({ id: _id });
+					_query.id = _id;
     				return this;
     			},
     
