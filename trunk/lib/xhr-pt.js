@@ -263,6 +263,7 @@
     				onerror: onerror,
     				oncancel: oncancel,
     				addEventListener: addEventListener,
+					on: addEventListener,
     				debug: debug,
     				cancel: cancel,
     				start: start,
