@@ -13,14 +13,23 @@ Copyright 2013 Austin France
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<style type="text/css">
+th { text-align: left; }
+</style>
 <script src="../lib/xhr-pt.js"></script>
 <script src="../lib/xhr-pt.js"></script>
-<div id="r0"></div>
-<hr/>
-<div id="r1"></div>
+<table border="1" cellpadding="5" width="100%">
+<thead><tr><th width="70px">Request ID</th><th>Log</th></tr></tbody>
+<tbody id="results"></tbody>
+</table>
 <script>
 function DEBUG(id,s) {
-	document.getElementById("r"+id).textContent = s;
+	while (results.rows.length <= id) {
+		var row = results.insertRow(-1);
+		row.insertCell(-1).textContent = results.rows.length;
+		row.insertCell(-1);
+	}
+	results.rows[id].cells[1].textContent = s;
 }
 function response(response) {
 	switch(response.eventType) {
@@ -43,10 +52,26 @@ function response(response) {
 		break;
 	case this.EVENT_TYPE.LOAD:
 		console.dir(response);
-		DEBUG(this.getId(), "DONE");
+		var xhr = response.getXhr();
+		DEBUG(this.getId(), "DONE " + response.XHR.method + " " + xhr.status + " " + xhr.statusText + " > " 
+					+ (response.XHR.method != "GET" ? response.getXhr().responseText : ""));
 		break;
 	}
 }
+
+DEBUG(0,"GET slowdown.php?s=102400&d=0.1");
+XHR("slowdown.php?s=102400&d=0.1")
+	.addId()
+    .debug(true)
+	.timeout(10000)
+	.header("X-Test-Header", "header value")
+	.addEventListener("timeout", response)
+	.addEventListener("loading", response)
+	.addEventListener("error",   response)
+	.addEventListener("load",   response)
+	.start();
+
+DEBUG(1,"GET slowdown.php?s=102400&d=0.1");
 XHR("slowdown.php?s=102400&d=0.1")
 	.addId()
     .debug(true)
@@ -57,13 +82,51 @@ XHR("slowdown.php?s=102400&d=0.1")
 	.addEventListener("load",   response)
 	.start();
 
-XHR("slowdown.php?s=102400&d=0.1")
+DEBUG(2,"POST slowdown.php");
+XHR("slowdown.php")
 	.addId()
     .debug(true)
-	.timeout(10000)
+	.timeout(1000)
 	.addEventListener("timeout", response)
 	.addEventListener("loading", response)
 	.addEventListener("error",   response)
 	.addEventListener("load",   response)
+	.post("name=value&name2=value2", "application/x-www-form-encoded")
+	.start();
+
+DEBUG(3,"PUT slowdown.php");
+XHR("slowdown.php")
+	.addId()
+    .debug(true)
+	.timeout(1000)
+	.addEventListener("timeout", response)
+	.addEventListener("loading", response)
+	.addEventListener("error",   response)
+	.addEventListener("load",   response)
+	.put({ name: "value" })
+	.start();
+
+DEBUG(4,"HEAD slowdown.php");
+XHR("slowdown.php")
+	.addId()
+    .debug(true)
+	.timeout(1000)
+	.addEventListener("timeout", response)
+	.addEventListener("loading", response)
+	.addEventListener("error",   response)
+	.addEventListener("load",   response)
+	.head()
+	.start();
+
+DEBUG(5,"OPTIONS slowdown.php");
+XHR("slowdown.php")
+	.addId()
+    .debug(true)
+	.timeout(1000)
+	.addEventListener("timeout", response)
+	.addEventListener("loading", response)
+	.addEventListener("error",   response)
+	.addEventListener("load",   response)
+	.options()
 	.start();
 </script>

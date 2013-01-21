@@ -24,20 +24,16 @@
     			_debug = false,
     			_start = 0,
     			_timeout = 0,			// timeout timer id
+				_headers = [],
     
     			// Public method implementations
     
-    			timeout = function(timeouts, ontimeout) {
-    				if (typeof(timeouts) == "function") {
-    					ontimeout = timeouts;
-    				} else {
-    					if (typeof(timeouts) != "array") timeouts = [ timeouts ];
-    					if (timeouts.length > 0) {
-    						while (timeouts.length < 5) timeouts.push(timeouts[0]);
-    						_timeouts = timeouts;
-    					}
-    				}
-    				if (ontimeout) this.addEventHandler("timeout", ontimeout);
+    			timeout = function(timeouts) {
+					if (typeof(timeouts) != "array") timeouts = [ timeouts ];
+					if (timeouts.length > 0) {
+						while (timeouts.length < 4) timeouts.push(timeouts[0]);
+						_timeouts = timeouts;
+					}
     				return this;
     			},
     			auth = function(user, password) {
@@ -45,6 +41,11 @@
     				this.password = password;
     				return this;
     			},
+
+				header = function(name, value) {
+					_headers.push({ name: name, value: value });
+					return this;
+				},
     
     			get = function() {
     				this.method = "GET";
@@ -61,15 +62,15 @@
     				return this;
     			},
     
-    			post = function(data) {
+    			post = function(data, contentType) {
     				this.method = "POST";
-    				this.postData = data;
+					_requestBody.apply(this, [ data, contentType ]);
     				return this;
-    			},
-    
-    			put = function(data) {
+				},
+				
+    			put = function(data, contentType) {
     				this.method = "PUT";
-    				this.postData = data;
+					_requestBody.apply(this, [ data, contentType ]);
     				return this;
     			},
     
@@ -123,10 +124,17 @@
     					_timeout = setTimeout(function() { _timedout.apply(XHR) }, _timeouts[0]);
     					_xhr.onreadystatechange = function() { _readystatechange.apply(XHR); };
     					_xhr.open(this.method, this.uri, true, this.user, this.password);
+						for (var i = 0; i < _headers.length; i++) {
+    						console.debug(_id + ": SET HEADER " + _headers[i].name + ": " + _headers[i].value);
+							_xhr.setRequestHeader(_headers[i].name, _headers[i].value);
+						}
     					if (_debug) {
     						console.debug(_id + ": XHR " + this.method + " " + this.uri);
     					}
     					try {
+							if (this.contentType) {
+								_xhr.setRequestHeader("Content-Type", this.contentType);
+							}
     						_xhr.send(this.postData);
     					} catch(e) {
     						clearTimeout(_timeout);
@@ -146,6 +154,27 @@
     				return this;
     			},
     
+				_requestBody = function(data, contentType) {
+					if (typeof(data) == "object") {
+						if (!contentType) contentType = "application/json";
+						switch (contentType) {
+						case "text/plain":
+							this.postData = data.toString();
+							this.contentType = contentType;
+							break;
+						case "application/json": 
+							this.postData = JSON.stringify(data);
+							this.contentType = "application/json";
+							break;
+						default:
+							throw new Error("request body of type object with unsupported content type");
+							break;
+						}
+					} else {
+						this.postData = data;
+						this.contentType = contentType || "application/x-www-form-urlencoded";
+					}
+    			},
     
     			_timedout = function() {
     				console.debug(_id + ": XHR REQUEST TIMED OUT");
@@ -204,7 +233,7 @@
     
     			_xhr = new XMLHttpRequest(),
     
-    			_timeouts = [ 20000, 20000, 20000, 20000, 20000 ],
+    			_timeouts = [ 20000, 20000, 20000, 20000 ],
     
     			_listeners = {},
     
@@ -222,6 +251,7 @@
     				// Public Methods
     				timeout: timeout,
     				auth: auth,
+    				header: header,
     				get: get,
     				head: head,
     				options: options,
