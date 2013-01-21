@@ -25,6 +25,8 @@
     			_start = 0,
     			_timeout = 0,			// timeout timer id
 				_headers = [],
+				_hasQuery = uri.indexOf("?") != -1,
+				_query = [],
     
     			// Public method implementations
     
@@ -36,11 +38,17 @@
 					}
     				return this;
     			},
+
     			auth = function(user, password) {
     				this.user = user;
     				this.password = password;
     				return this;
     			},
+
+				query = function(name, value) {
+					_query.push({ name: name, value: value });
+					return this;
+				},
 
 				header = function(name, value) {
 					_headers.push({ name: name, value: value });
@@ -123,13 +131,17 @@
     					_start = (new Date()).valueOf();
     					_timeout = setTimeout(function() { _timedout.apply(XHR) }, _timeouts[0]);
     					_xhr.onreadystatechange = function() { _readystatechange.apply(XHR); };
-    					_xhr.open(this.method, this.uri, true, this.user, this.password);
-						for (var i = 0; i < _headers.length; i++) {
+						var uri = this.uri;
+						for (var i = 0; i < _query.length; i++) {
+							uri += (i > 0 || _hasQuery ? "&" : "?") + _query[i].name + "=" + encodeURI(_query[i].value);
+						}
+    					_xhr.open(this.method, uri, true, this.user, this.password);
+						for (i = 0; i < _headers.length; i++) {
     						console.debug(_id + ": SET HEADER " + _headers[i].name + ": " + _headers[i].value);
 							_xhr.setRequestHeader(_headers[i].name, _headers[i].value);
 						}
     					if (_debug) {
-    						console.debug(_id + ": XHR " + this.method + " " + this.uri);
+    						console.debug(_id + ": XHR " + this.method + " " + uri);
     					}
     					try {
 							if (this.contentType) {
@@ -150,7 +162,7 @@
     			},
     
     			addId = function() {
-    				this.uri += (this.uri.indexOf("?") == -1 ? "?" : "&") + "id="+_id;
+					_query.push({ id: _id });
     				return this;
     			},
     
@@ -251,6 +263,7 @@
     				// Public Methods
     				timeout: timeout,
     				auth: auth,
+					query: query,
     				header: header,
     				get: get,
     				head: head,

@@ -60,9 +60,11 @@ function response(response) {
 }
 
 DEBUG(0,"GET slowdown.php?s=102400&d=0.1");
-XHR("slowdown.php?s=102400&d=0.1")
+XHR("slowdown.php")
 	.addId()
     .debug(true)
+	.query("s",102400)
+	.query("d", 0.1)
 	.timeout(10000)
 	.header("X-Test-Header", "header value")
 	.addEventListener("timeout", response)
