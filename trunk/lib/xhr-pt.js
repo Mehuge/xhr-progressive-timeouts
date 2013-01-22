@@ -296,5 +296,6 @@
     		return exports;
     	}
 		window.XHR._id = 0;
+		if (!console.debug) console.debug = console.log;
     }
 })(window);
