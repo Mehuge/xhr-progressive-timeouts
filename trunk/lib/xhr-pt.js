@@ -17,6 +17,8 @@
 (function(window){
  	// install as XHR if XHR not already defined
 	if (!window.XHR) {
+		var _event_names = [ "unsent", "opened", "headers", "loading", "load" ],
+			_EVENT_TYPE = { UNSENT: 0, OPENED: 1, HEADERS: 2, LOADING: 3, LOAD: 4, TIMEOUT: 5, CANCEL: 6, ERROR: 7 };
         window.XHR = function(uri) {
     		// Private data and methods
     		var _id = window.XHR._id++,
@@ -89,33 +91,15 @@
     				return this;
     			},
     
-    			ontimeout = function(handler) {
-    				this.addEventListener("timeout", handler);
-    				return this;
-    			},
+    			ontimeout = function(handler) { this.on("timeout", handler); return this; },
+    			onopened = function(handler) { this.on("opened", handler); return this; },
+    			onheaders = function(handler) { this.on("headers", handler); return this; },
+    			onloading = function(handler) { this.on("loading", handler); return this; },
+    			onload = function(handler) { this.on("load", handler); this.start(); return this; },
+    			onerror = function(handler) { this.on("error", handler); return this; },
+    			oncancel = function(handler) { this.on("cancel", handler); return this; },
     
-    			onloading = function(handler) {
-    				this.addEventListener("loading", handler);
-    				return this;
-    			},
-    
-    			onload = function(handler) {
-    				this.addEventListener("load", handler);
-    				this.start();
-    				return this;
-    			},
-    
-    			onerror = function(handler) {
-    				this.addEventListener("error", handler);
-    				return this;
-    			},
-    
-    			oncancel = function(handler) {
-    				this.addEventListener("cancel", handler);
-    				return this;
-    			},
-    
-    			addEventListener = function(name, handler) {
+    			on = function(name, handler) {
     				var listeners = _listeners[name] || [];
     				listeners.push(handler);
     				_listeners[name] = listeners;
@@ -160,7 +144,7 @@
     					} catch(e) {
     						clearTimeout(_timeout);
     						_timeout = null;
-    						_fireEvent(XHR, "error", _getResponse(this, XHR.EVENT_TYPE.ERROR, { error: e }));
+    						_fireEvent(XHR, "error", _getResponse(this, { error: e }));
     					}
     				}
     				return this;
@@ -199,7 +183,8 @@
     
     			_timedout = function() {
     				console.debug(_id + ": XHR REQUEST TIMED OUT");
-    				_fireEvent(this, "timeout", _getResponse(this, this.EVENT_TYPE.TIMEOUT));
+					this.timedout = true;
+    				_fireEvent(this, "timeout", _getResponse(this));
     				this.cancel();
     			},
     
@@ -216,38 +201,40 @@
     							+ " TIMEOUT " + (sofar + _timeouts[_xhr.readyState])); 
     					}
     					_timeout = setTimeout(function() { _timedout.apply(XHR) }, _timeouts[_xhr.readyState]);
-    					_fireEvent(this, "loading", _getResponse(this, this.EVENT_TYPE.LOADING));
+    					_fireEvent(this, _event_names[_xhr.readyState], _getResponse(this));
     				} else {
     					_inflight = null;
+						if (XHR.timedout) return;		// Timeout event allready fired
     					if (XHR.cancelled) {
     						if (_debug) {
     							console.debug(_id + ": XHR CANCELLED AFTER " + sofar);
     						}
-    						_fireEvent(this, "cancel", _getResponse(this, this.EVENT_TYPE.CANCEL));
+    						_fireEvent(this, "cancel", _getResponse(this));
     					} else {
     						if (_debug) {
     							console.debug(_id + ": XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
     						}
-    						_fireEvent(this, "loading", _getResponse(this, this.EVENT_TYPE.LOADING));
-    						if (_xhr.status == 200) {
-    							_fireEvent(this, "load", _getResponse(this, this.EVENT_TYPE.LOAD, { status: _xhr.status }));
-    						}
+							_fireEvent(this, "load", _getResponse(this, { status: _xhr.status }));
     					}
     				}
     			},
     
     			_fireEvent = function(XHR, name, args) {
+					args.eventName = name;
+					args.eventType = _EVENT_TYPE[name.toUpperCase()];
+					if (_debug) {
+						console.debug(_id + ": FIRE EVENT " + name + " -> " + JSON.stringify(args));
+					}
     				var listeners = _listeners[name] || [];
     				for (var i = 0; i < listeners.length; i++) {
     					listeners[i].apply(XHR,[ args ]);
     				}
     			},
     
-    			_getResponse = function(XHR, eventType, response) {
+    			_getResponse = function(XHR, response) {
     				response = response || {};
-    				response.eventType = eventType;
     				response.XHR = XHR;
-    				response.EVENT_TYPE = XHR.EVENT_TYPE;
+    				response.EVENT_TYPE = _EVENT_TYPE;
     				response.getXhr = function() { return _xhr; };
     				return response;
     			}, 
@@ -260,7 +247,7 @@
     
     			exports = {
     				// Enums
-    				EVENT_TYPE: { LOADING: 0, TIMEOUT: 1, CANCEL: 2, ERROR: 3, LOAD: 4 },
+    				EVENT_TYPE: _EVENT_TYPE,
     
     				// Public data
     				method: "GET",
@@ -284,8 +271,8 @@
     				onload: onload,
     				onerror: onerror,
     				oncancel: oncancel,
-    				addEventListener: addEventListener,
-					on: addEventListener,
+    				addEventListener: on,
+					on: on,
     				debug: debug,
     				cancel: cancel,
     				start: start,
