@@ -182,9 +182,7 @@
     			},
     
     			_timedout = function() {
-    				console.debug(_id + ": XHR REQUEST TIMED OUT");
 					this.timedout = true;
-    				_fireEvent(this, "timeout", _getResponse(this));
     				this.cancel();
     			},
     
@@ -204,8 +202,12 @@
     					_fireEvent(this, _event_names[_xhr.readyState], _getResponse(this));
     				} else {
     					_inflight = null;
-						if (XHR.timedout) return;		// Timeout event allready fired
-    					if (XHR.cancelled) {
+						if (XHR.timedout) {
+    						if (_debug) {
+								console.debug(_id + ": XHR REQUEST TIMED OUT AFTER " + sofar);
+							}
+							_fireEvent(this, "timeout", _getResponse(this));
+						} else if (XHR.cancelled) {
     						if (_debug) {
     							console.debug(_id + ": XHR CANCELLED AFTER " + sofar);
     						}
