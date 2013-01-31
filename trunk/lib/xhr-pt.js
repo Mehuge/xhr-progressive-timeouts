@@ -216,7 +216,13 @@
     						if (_debug) {
     							console.debug(_id + ": XHR COMPLETE STATUS " + _xhr.status + " TOOK " + sofar);
     						}
-							_fireEvent(this, "load", _getResponse(this, { status: _xhr.status }));
+							if (_xhr.status == 0) {
+								var e = new Error('something went wrong during the transfer');
+								e.code = 0;
+								_fireEvent(this, "error", _getResponse(this, { error: e }));
+							} else {
+								_fireEvent(this, "load", _getResponse(this, { status: _xhr.status }));
+							}
     					}
     				}
     			},

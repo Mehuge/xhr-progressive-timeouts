@@ -46,7 +46,7 @@ function response(response) {
 		console.dir(response); 
 		break;
 	case this.EVENT_TYPE.ERROR:
-		var e = response.error, m = e.message + " (" + e.name + ") [" + e.code + "] " + e.stack;
+		var e = response.error, m = "[code=" + e.code + "] " + e.stack;
 		console.error(m);
 		DEBUG(this.getId(), m);
 		console.dir(response); 
@@ -132,4 +132,16 @@ XHR("slowdown.php")
 	.on("error",   response)
 	.on("load",   response)
 	.start();
+
+DEBUG(6,"Origin is not Allowed");
+XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
+	.addId()
+    .debug(true)
+	.timeout(1000)
+	.on("timeout", response)
+	.on("loading", response)
+	.on("error",   response)
+	.on("load",   response)
+	.start();
+
 </script>
