@@ -17,13 +17,17 @@ Copyright 2013 Austin France
 <style type="text/css">
 th { text-align: left; }
 </style>
-<script src="http://requirejs.org/docs/release/2.1.4/comments/require.js"></script>
+<script src="http://download.dojotoolkit.org/release-1.8.3/dojo.js.uncompressed.js"></script>
 <table border="1" cellpadding="5" width="100%">
 <thead><tr><th width="70px">Request ID</th><th>Log</th></tr></thead>
 <tbody id="results"></tbody>
 </table>
 <script>
-require({ baseUrl: "../lib" }, [ "xhr-pt" ], function(XHR) {
+// dojo's baseUrl handling is a teeny weeny bit quirky.  oh lets not beat around the bush,
+// its completely bonkers.  dojo's base URL assumes it points at the dojo folder, so if I
+// want to load lib/xhr-pt.js I have to pretent there is a lib/dojo folder, and set that
+// as my base.
+require({ baseUrl: "../lib/dojo/" }, [ "xhr-pt" ], function(XHR) {
 	function DEBUG(id,s) {
 		while (results.rows.length <= id) {
 			var row = results.insertRow(-1);
