@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<!--
+Copyright 2013 Austin France
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<style type="text/css">
+th { text-align: left; }
+</style>
+<script base=".." src="http://requirejs.org/docs/release/2.1.4/comments/require.js"></script>
+<table border="1" cellpadding="5" width="100%">
+<thead><tr><th width="70px">Request ID</th><th>Log</th></tr></thead>
+<tbody id="results"></tbody>
+</table>
+<script>
+require({ baseUrl: "../lib" }, [ "xhr-pt" ], function(XHR) {
+	function DEBUG(id,s) {
+		while (results.rows.length <= id) {
+			var row = results.insertRow(-1);
+			row.insertCell(-1).textContent = results.rows.length;
+			row.insertCell(-1);
+		}
+		results.rows[id].cells[1].textContent = s;
+	}
+	function response(response) {
+		switch(response.eventType) {
+		case this.EVENT_TYPE.LOADING:
+			var xhr = response.getXhr();
+			if (xhr.readyState > 2) {
+				DEBUG(this.getId(), " downloading " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
+			}
+			break;
+		case this.EVENT_TYPE.TIMEOUT:
+			DEBUG(this.getId(), "Timed Out");
+			console.error('timed out');
+			console.dir(response); 
+			break;
+		case this.EVENT_TYPE.ERROR:
+			var e = response.error, m = "[code=" + e.code + "] " + e.stack;
+			console.error(m);
+			DEBUG(this.getId(), m);
+			console.dir(response); 
+			break;
+		case this.EVENT_TYPE.LOAD:
+			console.dir(response);
+			var xhr = response.getXhr();
+			DEBUG(this.getId(), "DONE " + response.XHR.method + " " + xhr.status + " " + xhr.statusText + " > " 
+						+ (response.XHR.method != "GET" ? response.getXhr().responseText : ""));
+			break;
+		}
+	}
+
+	DEBUG(0,"GET slowdown.php?s=102400&d=0.1");
+	XHR("slowdown.php")
+		.addId()
+		.debug(true)
+		.query("s",102400)
+		.query("d", 0.1)
+		.timeout(10000)
+		.header("X-Test-Header", "header value")
+		.addEventListener("timeout", response)
+		.addEventListener("loading", response)
+		.addEventListener("error",   response)
+		.addEventListener("load",   response)
+		.start();
+
+	DEBUG(1,"GET slowdown.php?s=102400&d=0.1");
+	XHR("slowdown.php?s=102400&d=0.1")
+		.addId()
+		.debug(true)
+		.timeout(10000)
+		.on("timeout", response)
+		.on("loading", response)
+		.on("error",   response)
+		.on("load",   response)
+		.start();
+
+	DEBUG(2,"POST slowdown.php");
+	XHR("slowdown.php")
+		.addId()
+		.debug(true)
+		.post("name=value&name2=value2", "application/x-www-form-encoded")
+		.timeout(1000)
+		.ontimeout(response)
+		.onloading(response)
+		.onerror(response)
+		.onload(response)
+		.start();
+
+	DEBUG(3,"PUT slowdown.php");
+	XHR("slowdown.php")
+		.addId()
+		.debug(true)
+		.timeout(1000)
+		.put({ name: "value" })
+		.on("timeout", response)
+		.on("loading", response)
+		.on("error",   response)
+		.on("load",   response)
+		.start();
+
+	DEBUG(4,"HEAD slowdown.php");
+	XHR("slowdown.php")
+		.addId()
+		.debug(true)
+		.head()
+		.timeout(1000)
+		.on("timeout", response)
+		.on("loading", response)
+		.on("error",   response)
+		.on("load",   response)
+		.start();
+
+	DEBUG(5,"OPTIONS slowdown.php");
+	XHR("slowdown.php")
+		.addId()
+		.debug(true)
+		.options()
+		.timeout(1000)
+		.on("timeout", response)
+		.on("loading", response)
+		.on("error",   response)
+		.on("load",   response)
+		.start();
+
+	DEBUG(6,"Origin is not Allowed");
+	XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
+		.addId()
+		.debug(true)
+		.timeout(1000)
+		.on("timeout", response)
+		.on("loading", response)
+		.on("error",   response)
+		.on("load",   response)
+		.start();
+});
+</script>
