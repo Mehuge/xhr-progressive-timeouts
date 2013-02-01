@@ -315,7 +315,10 @@
 				// If onload handler specified, then start now
 				if (_fn_onload) {
 					exports.on("load", _fn_onload);
-					exports.start();
+					// don't start it until end of this execution context so
+					// that chained methods can be called and executed before
+					// the request is started
+					setTimeout(function() { exports.start(); }, 0);
 				}
 
 				return exports;

@@ -60,7 +60,10 @@ function response(response) {
 	}
 }
 
-DEBUG(0,"GET slowdown.php?s=102400&d=0.1");
+// Full blow GET request, with embedded query parameters, timeout, custom header 
+// and handler for all the different events (well most of them).
+
+DEBUG(1,"GET slowdown.php?s=102400&d=0.1");
 XHR("slowdown.php")
 	.addId()
     .debug(true)
@@ -74,6 +77,7 @@ XHR("slowdown.php")
 	.addEventListener("load",   response)
 	.start();
 
+// Same request, but query string is already embedded in the URI
 DEBUG(1,"GET slowdown.php?s=102400&d=0.1");
 XHR("slowdown.php?s=102400&d=0.1")
 	.addId()
@@ -84,6 +88,8 @@ XHR("slowdown.php?s=102400&d=0.1")
 	.on("error",   response)
 	.on("load",   response)
 	.start();
+
+// POST request, sending form-encoded data
 
 DEBUG(2,"POST slowdown.php");
 XHR("slowdown.php")
@@ -97,6 +103,8 @@ XHR("slowdown.php")
 	.onload(response)
 	.start();
 
+// PUT Request sending JSON data
+
 DEBUG(3,"PUT slowdown.php");
 XHR("slowdown.php")
 	.addId()
@@ -108,6 +116,8 @@ XHR("slowdown.php")
 	.on("error",   response)
 	.on("load",   response)
 	.start();
+
+// HEAD request
 
 DEBUG(4,"HEAD slowdown.php");
 XHR("slowdown.php")
@@ -121,6 +131,8 @@ XHR("slowdown.php")
 	.on("load",   response)
 	.start();
 
+// OPTIONS request
+
 DEBUG(5,"OPTIONS slowdown.php");
 XHR("slowdown.php")
 	.addId()
@@ -133,6 +145,8 @@ XHR("slowdown.php")
 	.on("load",   response)
 	.start();
 
+// Test for Origin is not Allowed handling
+
 DEBUG(6,"Origin is not Allowed");
 XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
 	.addId()
@@ -144,10 +158,25 @@ XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
 	.on("load",   response)
 	.start();
 
+// Simple GET request
+
 DEBUG(7,"Simple");
-XHR("slowdown.php", function(response) { alert(response.getXhr().status); });
+XHR("slowdown.php", function(response) { 
+	DEBUG(7, response.getXhr().status + " OK " + response.XHR.uri); 
+});
+
+// Simple POST request with credentials
 
 DEBUG(8,"Simple POST");
-XHR("slowdown.php", [ "POST", "somedata", "adf", "password" ], function(response) { alert(response.getXhr().status); });
+XHR("slowdown.php", [ "POST", "somedata", "adf", "password" ], function(response) { 
+	DEBUG(8, response.getXhr().status + " OK " + response.XHR.uri); 
+});
+
+
+// Simple Request modified by the call chain
+DEBUG(9,"Simple GET modified");
+XHR("slowdown.php", function(response) { 
+	DEBUG(9, response.getXhr().status + " OK " + response.XHR.uri); 
+}).addId().query("name", "value");
 
 </script>
