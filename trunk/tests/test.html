@@ -144,4 +144,10 @@ XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
 	.on("load",   response)
 	.start();
 
+DEBUG(7,"Simple");
+XHR("slowdown.php", function(response) { alert(response.getXhr().status); });
+
+DEBUG(8,"Simple POST");
+XHR("slowdown.php", [ "POST", "somedata", "adf", "password" ], function(response) { alert(response.getXhr().status); });
+
 </script>

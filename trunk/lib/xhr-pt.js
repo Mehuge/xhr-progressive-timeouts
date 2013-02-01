@@ -23,7 +23,7 @@
 		define("xhr-pt", [], function() {
 			var _event_names = [ "unsent", "opened", "headers", "loading", "load" ],
 				_EVENT_TYPE = { UNSENT: 0, OPENED: 1, HEADERS: 2, LOADING: 3, LOAD: 4, TIMEOUT: 5, CANCEL: 6, ERROR: 7 };
-			global.XHR = function(uri) {
+			global.XHR = function(uri, a1, a2, a3) {
 				// Private data and methods
 				var _id = global.XHR._id++,
 					_inflight = false,
@@ -256,7 +256,7 @@
 					_timeouts = [ 20000, 20000, 20000, 20000 ],
 		
 					_listeners = {},
-		
+
 					exports = {
 						// Enums
 						EVENT_TYPE: _EVENT_TYPE,
@@ -291,7 +291,33 @@
 						getId: getId,
 						addId: addId
 					};
-		
+
+				// parse arguments
+				var _fn_onload, a;
+				for (var i = 1; i < arguments.length; i++) {
+					var arg = arguments[i];
+					if (typeof arg == "function") {
+						_fn_onload = arg;
+					} else if (typeof arg == "object" && "length" in arg) {
+						a = arg;
+					}
+				}
+
+				// if options specified, then process them
+				if (a) {
+					// [ method, data, user, password ]
+					if (a.length) exports.method   = a.shift();
+					if (a.length) exports.postData = a.shift();
+					if (a.length) exports.user 	   = a.shift();
+					if (a.length) exports.password = a.shift();
+				}
+
+				// If onload handler specified, then start now
+				if (_fn_onload) {
+					exports.on("load", _fn_onload);
+					exports.start();
+				}
+
 				return exports;
 			}
 			global.XHR._id = 0;
