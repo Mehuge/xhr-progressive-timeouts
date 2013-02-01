@@ -14,14 +14,14 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-(function(window){
+(function(global){
  	// install as XHR if XHR not already defined
-	if (!window.XHR) {
+	if (!global.XHR) {
 		var _event_names = [ "unsent", "opened", "headers", "loading", "load" ],
 			_EVENT_TYPE = { UNSENT: 0, OPENED: 1, HEADERS: 2, LOADING: 3, LOAD: 4, TIMEOUT: 5, CANCEL: 6, ERROR: 7 };
-        window.XHR = function(uri) {
+        global.XHR = function(uri) {
     		// Private data and methods
-    		var _id = window.XHR._id++,
+    		var _id = global.XHR._id++,
 				_inflight = false,
     			_debug = false,
     			_start = 0,
@@ -290,7 +290,7 @@
     
     		return exports;
     	}
-		window.XHR._id = 0;
+		global.XHR._id = 0;
 		if (!console.debug) console.debug = console.log;
     }
-})(window);
+})(this);
