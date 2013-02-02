@@ -143,7 +143,16 @@
 								}
 							}
 							_finalUri = uri;
-							_xhr.open(this.method, uri, true, this.user, this.password);
+							try {
+								_xhr.open(this.method, uri, true, this.user, this.password);
+							} catch(e) {
+								clearTimeout(_timeout);
+								_timeout = null;
+								e.code = 0;
+								e.action = "open";
+								_fireEvent(XHR, "error", _getResponse(this, { error: e }));
+								return;
+							}
 							for (name in _headers) {
 								if (_headers.hasOwnProperty(name)) {
 									console.debug(_id + ": SET HEADER " + name + ": " + _headers[name]);
@@ -161,6 +170,8 @@
 							} catch(e) {
 								clearTimeout(_timeout);
 								_timeout = null;
+								e.code = 0;
+								e.action = "send";
 								_fireEvent(XHR, "error", _getResponse(this, { error: e }));
 							}
 						}
