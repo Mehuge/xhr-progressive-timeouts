@@ -17,7 +17,8 @@ Copyright 2013 Austin France
 <style type="text/css">
 th { text-align: left; }
 </style>
-<script src="https://raw.github.com/douglascrockford/JSON-js/master/json.js"></script>
+<script src="json.js"></script>
+<script src="DEBUG.js"></script>
 <script src="../lib/xhr-pt.js"></script>
 <script src="../lib/xhr-pt.js"></script>
 <table border="1" cellpadding="5" width="100%">
@@ -25,20 +26,18 @@ th { text-align: left; }
 <tbody id="results"></tbody>
 </table>
 <script>
-function DEBUG(id,s) {
-	while (results.rows.length <= id) {
-		var row = results.insertRow(-1);
-		row.insertCell(-1).textContent = results.rows.length;
-		row.insertCell(-1);
-	}
-	results.rows[id].cells[1].textContent = s;
-}
+
 function response(response) {
 	switch(response.eventType) {
 	case this.EVENT_TYPE.LOADING:
 		var xhr = response.getXhr();
 		if (xhr.readyState > 2) {
-			DEBUG(this.getId(), " downloading " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
+			try {
+				DEBUG(this.getId(), " downloading ... " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
+			} catch(e) {
+				// Old IE don't like accessing responseText when readyState < 4
+				DEBUG(this.getId(), " downloading ... ");
+			}
 		}
 		break;
 	case this.EVENT_TYPE.TIMEOUT:
@@ -149,15 +148,19 @@ XHR("slowdown.php")
 // Test for Origin is not Allowed handling
 
 DEBUG(6,"Origin is not Allowed");
-XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
-	.addId()
-    .debug(true)
-	.timeout(1000)
-	.on("timeout", response)
-	.on("loading", response)
-	.on("error",   response)
-	.on("load",   response)
-	.start();
+try { 
+	XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
+		.addId()
+		.debug(true)
+		.timeout(1000)
+		.on("timeout", response)
+		.on("loading", response)
+		.on("error",   response)
+		.on("load",   response)
+		.start();
+} catch(e) {
+	DEBUG(6, e.message);
+}
 
 // Simple GET request
 

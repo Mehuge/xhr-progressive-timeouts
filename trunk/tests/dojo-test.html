@@ -18,7 +18,8 @@ Copyright 2013 Austin France
 th { text-align: left; }
 </style>
 <script src="http://download.dojotoolkit.org/release-1.8.3/dojo.js.uncompressed.js"></script>
-<script src="https://raw.github.com/douglascrockford/JSON-js/master/json.js"></script>
+<script src="json.js"></script>
+<script src="DEBUG.js"></script>
 <table border="1" cellpadding="5" width="100%">
 <thead><tr><th width="70px">Request ID</th><th>Log</th></tr></thead>
 <tbody id="results"></tbody>
@@ -29,14 +30,7 @@ th { text-align: left; }
 // want to load lib/xhr-pt.js I have to pretent there is a lib/dojo folder, and set that
 // as my base.
 require({ baseUrl: "../lib/dojo/" }, [ "xhr-pt" ], function(XHR) {
-	function DEBUG(id,s) {
-		while (results.rows.length <= id) {
-			var row = results.insertRow(-1);
-			row.insertCell(-1).textContent = results.rows.length;
-			row.insertCell(-1);
-		}
-		results.rows[id].cells[1].textContent = s;
-	}
+
 	function response(response) {
 		switch(response.eventType) {
 		case this.EVENT_TYPE.LOADING:

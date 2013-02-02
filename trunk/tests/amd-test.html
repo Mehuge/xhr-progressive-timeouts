@@ -18,27 +18,25 @@ Copyright 2013 Austin France
 th { text-align: left; }
 </style>
 <script src="http://requirejs.org/docs/release/2.1.4/comments/require.js"></script>
-<script src="https://raw.github.com/douglascrockford/JSON-js/master/json.js"></script>
+<script src="json.js"></script>
+<script src="DEBUG.js"></script>
 <table border="1" cellpadding="5" width="100%">
 <thead><tr><th width="70px">Request ID</th><th>Log</th></tr></thead>
 <tbody id="results"></tbody>
 </table>
 <script>
 require({ baseUrl: "../lib" }, [ "xhr-pt" ], function(XHR) {
-	function DEBUG(id,s) {
-		while (results.rows.length <= id) {
-			var row = results.insertRow(-1);
-			row.insertCell(-1).textContent = results.rows.length;
-			row.insertCell(-1);
-		}
-		results.rows[id].cells[1].textContent = s;
-	}
+
 	function response(response) {
 		switch(response.eventType) {
 		case this.EVENT_TYPE.LOADING:
 			var xhr = response.getXhr();
 			if (xhr.readyState > 2) {
-				DEBUG(this.getId(), " downloading " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
+				try {
+					DEBUG(this.getId(), " downloading " + (parseInt((xhr.responseText.length/1024.0)*100)/100.0) + " KiB");
+				} catch(e) {
+					console.dir(e);
+				}
 			}
 			break;
 		case this.EVENT_TYPE.TIMEOUT:
