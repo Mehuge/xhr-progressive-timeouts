@@ -32,6 +32,7 @@
 					_timeout = 0,			// timeout timer id
 					_headers = {},
 					_query = {},
+					_finalUri,
 		
 					// Public method implementations
 		
@@ -109,6 +110,13 @@
 						_listeners[name] = listeners;
 						return this;
 					},
+
+					done = function(_lh, _eh, _th) {
+						if (_lh) this.on("load", _lh);
+						if (_eh) this.on("error", _eh);
+						if (_th) this.on("error", _th);
+						this.start();
+					},
 		
 					debug = function(on) {
 						_debug = on;
@@ -132,6 +140,7 @@
 								uri += sep + name + "=" + encodeURI(_query[name]);
 								sep = "&";
 							}
+							_finalUri = uri;
 							_xhr.open(this.method, uri, true, this.user, this.password);
 							for (name in _headers) {
 								console.debug(_id + ": SET HEADER " + name + ": " + _headers[name]);
@@ -161,6 +170,10 @@
 					addId = function() {
 						_query.id = _id;
 						return this;
+					},
+
+					getFinalUri = function() {
+						return _finalUri;
 					},
 		
 					_requestBody = function(data, contentType) {
@@ -205,7 +218,7 @@
 							_timeout = setTimeout(function() { _timedout.apply(XHR) }, _timeouts[_xhr.readyState]);
 							_fireEvent(this, _event_names[_xhr.readyState], _getResponse(this));
 						} else {
-							_inflight = null;
+							_inflight = false;
 							if (XHR.timedout) {
 								if (_debug) {
 									console.debug(_id + ": XHR REQUEST TIMED OUT AFTER " + sofar);
@@ -288,8 +301,10 @@
 						debug: debug,
 						cancel: cancel,
 						start: start,
+						done: done,
 						getId: getId,
-						addId: addId
+						addId: addId,
+						getFinalUri: getFinalUri
 					};
 
 				// parse arguments

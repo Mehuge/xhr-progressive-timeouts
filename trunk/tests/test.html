@@ -162,21 +162,35 @@ XHR("https://xhr-progressive-timeouts.googlecode.com/hg/trunk/lib/xhr-pt.js")
 
 DEBUG(7,"Simple");
 XHR("slowdown.php", function(response) { 
-	DEBUG(7, response.getXhr().status + " OK " + response.XHR.uri); 
+	DEBUG(7, response.getXhr().status + " OK " + response.XHR.getFinalUri()); 
 });
 
 // Simple POST request with credentials
 
 DEBUG(8,"Simple POST");
 XHR("slowdown.php", [ "POST", "somedata", "adf", "password" ], function(response) { 
-	DEBUG(8, response.getXhr().status + " OK " + response.XHR.uri); 
+	DEBUG(8, response.getXhr().status + " OK " + response.XHR.getFinalUri()); 
 });
 
 
 // Simple Request modified by the call chain
 DEBUG(9,"Simple GET modified");
 XHR("slowdown.php", function(response) { 
-	DEBUG(9, response.getXhr().status + " OK " + response.XHR.uri); 
+	DEBUG(9, response.getXhr().status + " OK " + response.XHR.getFinalUri()); 
 }).addId().query("name", "value");
+
+
+// Simple Request modified by the call chain
+DEBUG(10,"Example using done");
+XHR("slowdown.php").done(	function(response) { 
+								DEBUG(10, response.getXhr().status + " OK " + response.XHR.getFinalUri()); 
+							},
+							function(response) {
+								DEBUG(10, " ERROR " + response.error.message); 
+							},
+							function(response) {
+								DEBUG(10, " TIMEOUT");
+							}
+						);
 
 </script>
