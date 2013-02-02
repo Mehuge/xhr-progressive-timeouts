@@ -55,7 +55,7 @@
 						if (typeof o == "string") {
 							hash[o] = v;
 						} else {
-							for (k in o) { hash[k] = o[k]; }
+							for (k in o) { if (o.hasOwnProperty(k)) hash[k] = o[k]; }
 						}
 					},
 
@@ -137,14 +137,18 @@
 							_xhr.onreadystatechange = function() { _readystatechange.apply(XHR); };
 							var uri = this.uri, sep = uri.indexOf("?") == -1 ? "?" : "&";
 							for (name in _query) {
-								uri += sep + name + "=" + encodeURI(_query[name]);
-								sep = "&";
+								if (_query.hasOwnProperty(name)) {
+									uri += sep + name + "=" + encodeURI(_query[name]);
+									sep = "&";
+								}
 							}
 							_finalUri = uri;
 							_xhr.open(this.method, uri, true, this.user, this.password);
 							for (name in _headers) {
-								console.debug(_id + ": SET HEADER " + name + ": " + _headers[name]);
-								_xhr.setRequestHeader(name, _headers[name]);
+								if (_headers.hasOwnProperty(name)) {
+									console.debug(_id + ": SET HEADER " + name + ": " + _headers[name]);
+									_xhr.setRequestHeader(name, _headers[name]);
+								}
 							}
 							if (_debug) {
 								console.debug(_id + ": XHR " + this.method + " " + uri);
