@@ -55,7 +55,7 @@
 						if (typeof o == "string") {
 							hash[o] = v;
 						} else {
-							for (k in o) { if (o.hasOwnProperty(k)) hash[k] = o[k]; }
+							for (var k in o) { if (o.hasOwnProperty(k)) hash[k] = o[k]; }
 						}
 					},
 
