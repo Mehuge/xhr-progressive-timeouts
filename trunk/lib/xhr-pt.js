@@ -203,6 +203,17 @@
 								this.postData = JSON.stringify(data);
 								this.contentType = "application/json";
 								break;
+							case "application/x-www-form-urlencoded":
+								this.contentType = contentType;
+								var postData;
+								for (var k in data) {
+									if (data.hasOwnProperty(k)) {
+										postData = (postData ? postData + "&" : "")
+													+ k + "=" + encodeURIComponent(data[k]);
+									}
+								}
+								this.postData = postData;
+								break;
 							default:
 								throw new Error("request body of type object with unsupported content type");
 								break;
