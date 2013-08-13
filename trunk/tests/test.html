@@ -63,7 +63,7 @@ function response(response) {
 // Full blow GET request, with embedded query parameters, timeout, custom header 
 // and handler for all the different events (well most of them).
 
-DEBUG(1,"GET slowdown.php?s=102400&d=0.1");
+DEBUG(0,"GET slowdown.php?s=102400&d=0.1");
 XHR("slowdown.php")
 	.addId()
     .debug(true)
@@ -155,7 +155,15 @@ try {
 		.timeout(1000)
 		.on("timeout", response)
 		.on("loading", response)
-		.on("error",   response)
+		.on("error",   function(response) { 
+			var e = response.error, m = "[code=" + e.code + "] " + e.message + ": " + e.stack;
+			console.error(m);
+			if (e.code == 0) {
+				DEBUG(6, "Origin is Not Allowed: Successfully failed with e.code == 0");
+			} else {
+				DEBUG(6, "Unexpected Result: " + m);
+			}
+		})
 		.on("load",   response)
 		.start();
 } catch(e) {
@@ -170,7 +178,6 @@ XHR("slowdown.php", function(response) {
 });
 
 // Simple POST request with credentials
-
 DEBUG(8,"Simple POST");
 XHR("slowdown.php", [ "POST", "somedata", "adf", "password" ], function(response) { 
 	DEBUG(8, response.getXhr().status + " OK " + response.XHR.getFinalUri()); 
@@ -197,4 +204,24 @@ XHR("slowdown.php").done(	function(response) {
 							}
 						);
 
+// Recursive XHR request: Seen a problem where cross-domain security was triggered in chrome even though we
+// are not cross-domain XHRing.  It seemed to be triggered by recursive XHR requests, though I don't seem
+// to be able to re-produce it here.
+DEBUG(11,"Recursive XHR (chrome-bug) security test");
+XHR("slowdown.php").query({a:"1"}).debug(true).timeout(1000).onload(
+	function(response) {
+		DEBUG(11, "Level 1: " + response.getXhr().status + " " + response.XHR.getFinalUri() + " should get to level 3");
+		XHR("slowdown.php").query({b:"2"}).debug(true).timeout(1000).onload(
+			function(response) {
+				DEBUG(11, "Level 2: " + response.getXhr().status + " " + response.XHR.getFinalUri() + " should get to level 3");
+				XHR("slowdown.php").query({c:"3"}).debug(true).timeout(1000).onload(
+					function(response) {
+						DEBUG(11, "Level 3: " + response.getXhr().status + " " + response.XHR.getFinalUri() 
+							+ " successfully reached level 3");
+					}
+				);
+			}
+		);
+	}
+);
 </script>

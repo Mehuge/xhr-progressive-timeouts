@@ -5,7 +5,7 @@ function DEBUG(id,s) {
 	}
 	while (results.rows.length <= id) {
 		var row = results.insertRow(-1);
-		setText(row.insertCell(-1), results.rows.length);
+		setText(row.insertCell(-1), results.rows.length-1);
 		row.insertCell(-1);
 	}
 	setText(results.rows[id].cells[1], s);
