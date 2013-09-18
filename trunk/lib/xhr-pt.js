@@ -114,7 +114,7 @@
 					done = function(_lh, _eh, _th) {
 						if (_lh) this.on("load", _lh);
 						if (_eh) this.on("error", _eh);
-						if (_th) this.on("error", _th);
+						if (_th) this.on("timeout", _th);
 						this.start();
 					},
 		

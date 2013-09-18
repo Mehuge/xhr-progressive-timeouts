@@ -207,9 +207,13 @@ XHR("slowdown.php").done(	function(response) {
 // Recursive XHR request: Seen a problem where cross-domain security was triggered in chrome even though we
 // are not cross-domain XHRing.  It seemed to be triggered by recursive XHR requests, though I don't seem
 // to be able to re-produce it here.
-DEBUG(11,"Recursive XHR (chrome-bug) security test");
-XHR("slowdown.php").query({a:"1"}).debug(true).timeout(1000).onload(
-	function(response) {
+DEBUG(11,"Recursive XHR (chrome-bug) security test...");
+XHR("slowdown.php")
+	.debug(true)
+	.addId()
+	.query({a:"1"})
+	.timeout(1000)
+	.onload(function(response) {
 		DEBUG(11, "Level 1: " + response.getXhr().status + " " + response.XHR.getFinalUri() + " should get to level 3");
 		XHR("slowdown.php").query({b:"2"}).debug(true).timeout(1000).onload(
 			function(response) {
@@ -222,6 +226,21 @@ XHR("slowdown.php").query({a:"1"}).debug(true).timeout(1000).onload(
 				);
 			}
 		);
-	}
-);
+	});
+
+// Test for done() third argument (timeout handler)
+// https://code.google.com/p/xhr-progressive-timeouts/issues/detail?id=7
+DEBUG(12,"Test for done() with timeout handler (Issue 7)");
+XHR("slowdown.php")
+	.debug(true)
+	.addId()
+	.query({ s: 10240, d: 1 })		// that will take 10+ seconds
+	.timeout(1000)					// we will timeout in 1
+	.done(function(response) { 
+			DEBUG(12, response.getXhr().status + " OK " + response.XHR.getFinalUri() + " (TEST FAILED)"); 
+		}, function(response) {
+			DEBUG(12, " ERROR " + response.error.message + " (TEST FAILED)"); 
+		}, function(response) {
+			DEBUG(12, " done() timeout handler called (TEST SUCCESSFUL)");
+		});
 </script>
